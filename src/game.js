@@ -5,6 +5,7 @@ import HavokPhysics from "@babylonjs/havok";
 import floorUrl from "../assets/textures/floor.png";
 import floorBumpUrl from "../assets/textures/floor_bump.png";
 import Player from "./player";
+import Arena from "./arena";
 
 class Game {
 
@@ -14,12 +15,12 @@ class Game {
     #gameScene;
     #gameCamera;
     #shadowGenerator;
+    #shadowGenerator2;
     #bInspector = false;
 
     #elevator;
     #elevatorAggregate;
-    #zoneA;
-    #zoneB;
+
 
     #phase = 0.0;
     #vitesseY = 1.8;
@@ -27,6 +28,7 @@ class Game {
     inputMap = {};
     actions = {};
 
+    #arena;
     #player;
 
     constructor(canvas, engine) {
@@ -58,11 +60,33 @@ class Game {
         //this.#gameCamera.attachControl(this.#canvas, true);
 
         const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
-        light.intensity = 0.7;
+        light.intensity = 0.4;
+        light.diffuse = new Color3(.5, .5, .7);
+        light.specular = new Color3(1, 1, 1);
+        light.groundColor = new Color3(.7, .7, .9);
 
-        const sLight = new SpotLight("spot1", new Vector3(0, 20, 20), new Vector3(0, -1, -1), 2, 24, scene);
+        const sLight = new SpotLight("spot1", new Vector3(0, 20, 30), new Vector3(0, -1, -0.5), 2 * Math.PI / 3, 15, scene);
+        sLight.shadowMinZ = 1;
+        sLight.shadowMaxZ = 200;
+        sLight.diffuse = new Color3(222, 222, 240);
+        sLight.intensity = 7;
+
         this.#shadowGenerator = new ShadowGenerator(1024, sLight);
         this.#shadowGenerator.useBlurExponentialShadowMap = true;
+        this.#shadowGenerator.frustumEdgeFalloff = 1.0;
+        this.#shadowGenerator.setDarkness(0.1);
+
+        const sLight2 = new SpotLight("spot2", new Vector3(0, 20, -30), new Vector3(0, -1, 0.5), 2 * Math.PI / 3, 15, scene);
+        sLight2.shadowMinZ = 1;
+        sLight2.shadowMaxZ = 200;
+        sLight2.diffuse = new Color3(222, 222, 240);
+        sLight2.intensity = 7;
+
+        this.#shadowGenerator2 = new ShadowGenerator(1024, sLight2);
+        this.#shadowGenerator2.useBlurExponentialShadowMap = true;
+        this.#shadowGenerator2.frustumEdgeFalloff = 1.0;
+        this.#shadowGenerator2.setDarkness(0.1);
+
 
         const elevator = MeshBuilder.CreateDisc("sphere", { diameter: 2, segments: 32 }, scene);
         elevator.rotate(Vector3.Right(), Math.PI / 2)
@@ -70,7 +94,7 @@ class Game {
         this.#elevator = elevator;
 
         const ground = MeshBuilder.CreateGround("ground", { width: 640, height: 640, subdivisions: 128 }, scene);
-        ground.checkCollisions = true;
+        ground.position = new Vector3(0, -0.1, 0);
 
         const matGround = new StandardMaterial("boue", scene);
         //matGround.diffuseColor = new Color3(1, 0.4, 0);
@@ -93,34 +117,21 @@ class Game {
         elevator.material = matSphere;
 
         this.#shadowGenerator.addShadowCaster(elevator);
+        this.#shadowGenerator2.addShadowCaster(elevator);
 
-
-        this.#zoneA = MeshBuilder.CreateBox("zoneA", { width: 8, height: 0.2, depth: 8 }, scene);
-        let zoneMat = new StandardMaterial("zoneA", scene);
-        zoneMat.diffuseColor = Color3.Red();
-        zoneMat.alpha = 0.5;
-        this.#zoneA.material = zoneMat;
-        this.#zoneA.position = new Vector3(12, 0.1, 12);
-
-
-        this.#zoneB = MeshBuilder.CreateBox("zoneB", { width: 8, height: 0.2, depth: 8 }, scene);
-        let zoneMatB = new StandardMaterial("zoneB", scene);
-        zoneMatB.diffuseColor = Color3.Green();
-        zoneMatB.alpha = 0.5;
-        this.#zoneB.material = zoneMatB;
-        this.#zoneB.position = new Vector3(-12, 0.1, -12);
 
         // Create a sphere shape and the associated body. Size will be determined automatically.
         this.#elevatorAggregate = new PhysicsAggregate(elevator, PhysicsShapeType.CONVEX_HULL, { mass: 1, restitution: 0.0 }, scene);
         this.#elevatorAggregate.body.setMotionType(PhysicsMotionType.ANIMATED);
 
 
-        let boxDebug = MeshBuilder.CreateBox("boxDebug", { size: 2 });
-        boxDebug.position = new Vector3(10, 15, 5);
+        let boxDebug = MeshBuilder.CreateBox("boxDebug", { width: 0.5, depth: 0.5, height: 0.25 });
+        boxDebug.position = new Vector3(10, 1, 5);
         this.#shadowGenerator.addShadowCaster(boxDebug);
+        this.#shadowGenerator2.addShadowCaster(boxDebug);
 
         // Create a sphere shape and the associated body. Size will be determined automatically.
-        const boxAggregate = new PhysicsAggregate(boxDebug, PhysicsShapeType.BOX, { mass: 10, friction: 0.8, restitution: 0.2 }, scene);
+        const boxAggregate = new PhysicsAggregate(boxDebug, PhysicsShapeType.BOX, { mass: .25, friction: 0.05, restitution: 0.3 }, scene);
 
 
 
@@ -134,10 +145,16 @@ class Game {
     async initGame() {
         this.#havokInstance = await this.getInitializedHavok();
         this.#gameScene = this.createScene();
-        this.#player = new Player(3, 10, 3, this.#gameScene);
+        this.#player = new Player(3, 2, 3, this.#gameScene);
         await this.#player.init();
         this.#gameCamera.lockedTarget = this.#player.transform;
         this.#shadowGenerator.addShadowCaster(this.#player.gameObject, true);
+        this.#shadowGenerator2.addShadowCaster(this.#player.gameObject, true);
+
+        this.#arena = new Arena(0, 0, 0, this.#gameScene);
+        await this.#arena.init();
+        this.#shadowGenerator.addShadowCaster(this.#arena.gameObject, true);
+        this.#shadowGenerator2.addShadowCaster(this.#arena.gameObject, true);
 
         this.initInput();
     }
@@ -195,13 +212,6 @@ class Game {
         //Animation
         this.#phase += this.#vitesseY * delta;
         this.#elevatorAggregate.body.setLinearVelocity(new Vector3(0, Math.sin(this.#phase)), 0);
-
-        //Collisions
-        if (this.#elevator.intersectsMesh(this.#zoneA, false))
-            this.#elevator.material.emissiveColor = Color3.Red();
-        else
-            this.#elevator.material.emissiveColor = Color3.Black();
-
     }
 }
 

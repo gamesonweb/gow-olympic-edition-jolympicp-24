@@ -2,7 +2,7 @@ import { Matrix, Mesh, MeshBuilder, Physics6DoFConstraint, PhysicsAggregate, Phy
 
 import girlModelUrl from "../assets/models/girl1.glb";
 
-const USE_FORCES = false;
+const USE_FORCES = true;
 let RUNNING_SPEED = 8;
 let JUMP_IMPULSE = 10;
 const PLAYER_HEIGHT = 1.7;
@@ -48,12 +48,9 @@ class Player {
         this.transform = new MeshBuilder.CreateCapsule("player", { height: PLAYER_HEIGHT, radius: PLAYER_RADIUS }, this.scene);
         this.transform.visibility = 0.0;
         this.transform.position = new Vector3(this.x, this.y, this.z);
-
-
         if (USE_FORCES) {
-            RUNNING_SPEED = RUNNING_SPEED * 2;
+            RUNNING_SPEED *= 2;
         }
-
     }
 
     async init() {
@@ -77,13 +74,12 @@ class Player {
             inertiaOrientation: new Quaternion(0, 0, 0, 1)
         });
         if (USE_FORCES) {
-            this.capsuleAggregate.body.setLinearDamping(1.25);
+            this.capsuleAggregate.body.setLinearDamping(0.8);
             this.capsuleAggregate.body.setAngularDamping(10.0);
         }
         else {
-
-            this.capsuleAggregate.body.setLinearDamping(1.0);
-            this.capsuleAggregate.body.setAngularDamping(1.0);
+            this.capsuleAggregate.body.setLinearDamping(0.5);
+            this.capsuleAggregate.body.setAngularDamping(0.5);
         }
 
         this.gameObject.parent = this.transform;
@@ -126,10 +122,10 @@ class Player {
 
         if (USE_FORCES) {
 
-            if (actions["Space"]) {
+            if (actions["Space"] && currentVelocity.y == 0) {
                 //Avec la physique il va falloir tester notre distance par rapport au sol (raycast) et si on chute ou pas
                 // pour l'instant on autorise le saut
-                this.capsuleAggregate.body.applyImpulse(new Vector3(1, JUMP_IMPULSE, 2), new Vector3(0, 0, 0));
+                this.capsuleAggregate.body.applyImpulse(new Vector3(0, JUMP_IMPULSE, 0), Vector3.Zero());
             }
 
             //Position update
@@ -138,7 +134,7 @@ class Player {
         }
         else {
             let impulseY = 0;
-            if (actions["Space"]) {
+            if (actions["Space"] && currentVelocity.y == 0) {
                 impulseY = JUMP_IMPULSE;
             }
 
@@ -148,6 +144,7 @@ class Player {
             //Position update
             this.capsuleAggregate.body.setLinearVelocity(currentVelocity);
         }
+        
 
         //Orientation
         let directionXZ = new Vector3(this.speedX, 0, this.speedZ);
@@ -155,13 +152,6 @@ class Player {
 
         //Animations
         if (directionXZ.length() > 2.5) {
-            /* Autre tentative de  rotation autour de l'axe Z uniquement
-                const lookAt = Matrix.LookAtLH(
-                Vector3.Zero,
-                directionXZ,
-                Vector3.UpReadOnly
-            ).invert();
-            this.gameObject.rotationQuaternion = Quaternion.FromRotationMatrix( lookAt );*/
 
             this.gameObject.lookAt(directionXZ.normalize());
 
