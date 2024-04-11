@@ -1,11 +1,11 @@
 import { Matrix, Mesh, MeshBuilder, Physics6DoFConstraint, PhysicsAggregate, PhysicsConstraintAxis, PhysicsMotionType, PhysicsShapeType, Quaternion, SceneLoader, TransformNode, Vector3 } from "@babylonjs/core";
 
-import girlModelUrl from "../assets/models/girl1.glb";
+import girlModelUrl from "../assets/models/personnage.glb";
 
 const USE_FORCES = true;
-let RUNNING_SPEED = 8;
+let RUNNING_SPEED = 18;
 let JUMP_IMPULSE = 10;
-const PLAYER_HEIGHT = 1.7;
+const PLAYER_HEIGHT = 1.85;
 const PLAYER_RADIUS = 0.4;
 
 
@@ -85,9 +85,9 @@ class Player {
         this.gameObject.parent = this.transform;
         this.animationsGroup = result.animationGroups;
         this.animationsGroup[0].stop();
-        this.idleAnim = this.scene.getAnimationGroupByName('Idle');
-        this.runAnim = this.scene.getAnimationGroupByName('Running');
-        this.walkAnim = this.scene.getAnimationGroupByName('Walking');
+        this.idleAnim = this.scene.getAnimationGroupByName('idle');
+        this.runAnim = this.scene.getAnimationGroupByName('running');
+        this.walkAnim = this.scene.getAnimationGroupByName('walking');
         this.idleAnim.start(true, 1.0, this.idleAnim.from, this.idleAnim.to, false);
     }
 

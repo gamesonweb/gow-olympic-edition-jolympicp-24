@@ -51,8 +51,8 @@ class Game {
         scene.enablePhysics(new Vector3(0, -9.81, 0), hk);
 
         this.#gameCamera = new FollowCamera("camera1", new Vector3(0, 0, 0), scene);
-        this.#gameCamera.heightOffset = 4;
-        this.#gameCamera.radius = -8;
+        this.#gameCamera.heightOffset = 8;
+        this.#gameCamera.radius = -12;
         this.#gameCamera.maxCameraSpeed = 1;
         this.#gameCamera.cameraAcceleration = 0.025;
         this.#gameCamera.rotationOffset = 0;
@@ -145,11 +145,15 @@ class Game {
     async initGame() {
         this.#havokInstance = await this.getInitializedHavok();
         this.#gameScene = this.createScene();
-        this.#player = new Player(3, 2, 3, this.#gameScene);
+        this.#player = new Player(-10.70, 0.92, 45.88, this.#gameScene);
         await this.#player.init();
         this.#gameCamera.lockedTarget = this.#player.transform;
         this.#shadowGenerator.addShadowCaster(this.#player.gameObject, true);
         this.#shadowGenerator2.addShadowCaster(this.#player.gameObject, true);
+
+        // Faire en sorte que le joueur regarde vers la gauche de la direction de la caméra
+        const leftOfCamera = this.#gameCamera.position.subtract(new Vector3(1, 0, 0));
+        this.#player.gameObject.lookAt(leftOfCamera);
 
         this.#arena = new Arena(0, 0, 0, this.#gameScene);
         await this.#arena.init();
@@ -206,6 +210,20 @@ class Game {
     updateGame() {
 
         let delta = this.#engine.getDeltaTime() / 1000.0;
+
+        // Vérifiez si les touches flèche sont enfoncées et ajustez la position et l'angle de la caméra en conséquence
+        if (this.inputMap["ArrowUp"]) {
+            this.#gameCamera.radius += 1; // Ajustez cette valeur pour changer la vitesse de déplacement de la caméra
+        }
+        if (this.inputMap["ArrowDown"]) {
+            this.#gameCamera.radius -= 1; // Ajustez cette valeur pour changer la vitesse de déplacement de la caméra
+        }
+        if (this.inputMap["ArrowLeft"]) {
+            this.#gameCamera.rotationOffset += 0.01; // Ajustez cette valeur pour changer la vitesse de rotation de la caméra
+        }
+        if (this.inputMap["ArrowRight"]) {
+            this.#gameCamera.rotationOffset -= 0.01; // Ajustez cette valeur pour changer la vitesse de rotation de la caméra
+        }
 
         this.#player.update(this.inputMap, this.actions, delta);
 

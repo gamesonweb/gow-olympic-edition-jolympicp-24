@@ -1,6 +1,6 @@
 import { Color3, MeshBuilder, PhysicsAggregate, PhysicsMotionType, PhysicsShape, PhysicsShapeType, SceneLoader, StandardMaterial, TransformNode, Vector3 } from "@babylonjs/core";
 
-import arenaModelUrl from "../assets/models/ice_hockey.glb";
+import arenaModelUrl from "../assets/models/stadium.glb";
 
 class Arena {
 
