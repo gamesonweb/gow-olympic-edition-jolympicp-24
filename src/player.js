@@ -3,7 +3,7 @@ import { Matrix, Mesh, MeshBuilder, Physics6DoFConstraint, PhysicsAggregate, Phy
 import girlModelUrl from "../assets/models/personnage.glb";
 
 const USE_FORCES = true;
-let RUNNING_SPEED = 18;
+let RUNNING_SPEED = 2;
 let JUMP_IMPULSE = 10;
 const PLAYER_HEIGHT = 1.85;
 const PLAYER_RADIUS = 0.4;
@@ -105,7 +105,7 @@ class Player {
             if (USE_FORCES)
                 this.speedX = 0;
             else
-                this.speedX += (-12.0 * this.speedX * delta);
+                this.speedX += (-2 * this.speedX * delta);
         }
 
         if (inputMap["KeyW"])
@@ -117,7 +117,7 @@ class Player {
             if (USE_FORCES)
                 this.speedZ = 0;
             else
-                this.speedZ += (-12.0 * this.speedZ * delta);
+                this.speedZ += (-2 * this.speedZ * delta);
         }
 
         if (USE_FORCES) {
