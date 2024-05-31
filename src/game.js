@@ -133,7 +133,7 @@ class Game {
         // Create a sphere shape and the associated body. Size will be determined automatically.
         const boxAggregate = new PhysicsAggregate(boxDebug, PhysicsShapeType.BOX, { mass: .25, friction: 0.05, restitution: 0.3 }, scene);
 
-
+        
 
         return scene;
     }
@@ -145,7 +145,7 @@ class Game {
     async initGame() {
         this.#havokInstance = await this.getInitializedHavok();
         this.#gameScene = this.createScene();
-        this.#player = new Player(-10.70, 0.92, 45.88, this.#gameScene);
+        this.#player = new Player(-10.70, 0.92, 25.88, this.#gameScene);
         await this.#player.init();
         this.#gameCamera.lockedTarget = this.#player.transform;
         this.#shadowGenerator.addShadowCaster(this.#player.gameObject, true);
